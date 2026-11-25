@@ -19,9 +19,12 @@ export function updateVariableDefinitions(self) {
 		preview_zoom: { name: 'The preview: its zoom, in percent' },
 		tab_count: { name: 'How many tabs are open' },
 		favorite_count: { name: 'How many favorites there are' },
-		outputs: { name: 'The outputs on (NDI, SDI, Syphon), or off' },
-		ndi_name: { name: 'The NDI source name' },
-		ndi_receivers: { name: 'How many receivers the NDI source has' },
+		outputs: { name: 'The program’s outputs on (NDI, SDI, Syphon), or off' },
+		ndi_name: { name: 'The program’s NDI source name' },
+		ndi_receivers: { name: 'How many receivers the program’s NDI source has' },
+		preview_outputs: { name: 'The preview’s outputs on (NDI, SDI, Syphon), or off' },
+		preview_ndi_name: { name: 'The preview’s NDI source name' },
+		preview_ndi_receivers: { name: 'How many receivers the preview’s NDI source has' },
 		last_message: { name: 'The app’s last message' },
 	}
 	for (let n = 1; n <= TAB_VARIABLES; n++) {
@@ -48,6 +51,8 @@ export function variableValues(self) {
 	const favs = on ? (s.favorites ?? []) : []
 	const out = s?.output
 	const outputsOn = on ? OUTPUT_NAMES.filter(([k]) => out?.outputs?.[k]).map(([, name]) => name) : []
+	const pout = s?.previewOutput
+	const previewOn = on && pout ? OUTPUT_NAMES.filter(([k]) => pout.outputs?.[k]).map(([, name]) => name) : []
 	const values = {
 		connected: !!self.connected,
 		air_state: on ? (s.air?.state ?? '') : '',
@@ -64,6 +69,10 @@ export function variableValues(self) {
 		outputs: on ? outputsOn.join(', ') || 'off' : '',
 		ndi_name: on ? (out?.name ?? '') : '',
 		ndi_receivers: on ? (out?.connections ?? 0) : 0,
+		// (The preview feed's: none from an app before 0.2.0.)
+		preview_outputs: on && pout ? previewOn.join(', ') || 'off' : '',
+		preview_ndi_name: on && pout ? (pout.name ?? '') : '',
+		preview_ndi_receivers: on && pout ? (pout.connections ?? 0) : 0,
 		last_message: on ? (s.errors?.at(-1)?.message ?? '') : '',
 	}
 	for (let n = 1; n <= TAB_VARIABLES; n++) {

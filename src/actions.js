@@ -43,6 +43,18 @@ export const LOOK_SWITCHES = [
 	{ id: 'annoyances', label: 'Hide cookie banners and pop-ups' },
 ]
 
+/** The two feeds, each with its own outputs: the program (on air) and the preview. */
+export const FEED = {
+	type: 'dropdown',
+	id: 'feed',
+	label: 'Feed',
+	default: 'program',
+	choices: [
+		{ id: 'program', label: 'Program (on air)' },
+		{ id: 'preview', label: 'Preview' },
+	],
+}
+
 export const OUTPUTS = [
 	{ id: 'ndi', label: 'NDI' },
 	{ id: 'sdi', label: 'SDI (DeckLink)' },
@@ -286,16 +298,19 @@ export function updateActions(self) {
 		},
 		output: {
 			name: 'Output on or off',
+			description: 'An output of the program (what’s on air) or of the preview (the page in the preview, as it is)',
 			options: [
+				FEED,
 				{ type: 'dropdown', id: 'output', label: 'Output', default: 'ndi', choices: OUTPUTS },
 				ON_OFF_TOGGLE('value', 'Switch'),
 			],
-			callback: ({ options: o }) => run('outputs', { [o.output]: o.value }),
+			callback: ({ options: o }) => self.runOutputs(o.feed, { [o.output]: o.value }),
 		},
 		output_mode: {
 			name: 'Outputs: NDI and SDI together',
-			description: 'NDI and SDI both, one, or neither (off switches Syphon off too)',
+			description: 'A feed’s NDI and SDI: both, one, or neither (off switches its Syphon off too)',
 			options: [
+				FEED,
 				{
 					type: 'dropdown',
 					id: 'mode',
@@ -309,7 +324,27 @@ export function updateActions(self) {
 					],
 				},
 			],
-			callback: ({ options: o }) => run('outputs', { mode: o.mode }),
+			callback: ({ options: o }) => self.runOutputs(o.feed, { mode: o.mode }),
+		},
+
+		signout: {
+			name: 'Sign out',
+			description:
+				'Sign out of the preview’s site, the page on air’s, or every site (cookies, sign-ins, stored data). Pages already open keep what they show until reloaded',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'of',
+					label: 'Of',
+					default: 'preview',
+					choices: [
+						{ id: 'preview', label: 'The preview’s site' },
+						{ id: 'program', label: 'The site on air' },
+						{ id: 'all', label: 'Every site' },
+					],
+				},
+			],
+			callback: ({ options: o }) => run('signout', o.of === 'all' ? { all: 'true' } : { target: o.of }),
 		},
 
 		// ---- Anything else

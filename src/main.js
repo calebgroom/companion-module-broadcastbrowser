@@ -79,7 +79,7 @@ export default class BroadcastBrowserInstance extends InstanceBase {
 				width: 12,
 				label: '',
 				value:
-					'In Broadcast Browser, <b>File → Copy Control API Address</b> shows its address and port; <b>File → Copy API Token</b> copies the token to paste below. Requests are signed with the token: it never crosses the network.',
+					'Companion on the same Mac as Broadcast Browser: 127.0.0.1. On another computer: in Broadcast Browser, <b>File → Control API → Listen On</b>, choose All Networks or the network Companion is on (at first it listens on its own Mac only); <b>Copy Control API Address</b> there shows the address. <b>Copy API Token</b> copies the token to paste below. Requests are signed with the token: it never crosses the network.',
 			},
 			{
 				type: 'textinput',
@@ -106,7 +106,8 @@ export default class BroadcastBrowserInstance extends InstanceBase {
 				id: 'token',
 				label: 'API token',
 				width: 12,
-				tooltip: 'In Broadcast Browser: File → Copy API Token. Leave it empty only if the app has api-token off.',
+				tooltip:
+					'In Broadcast Browser: File → Control API → Copy API Token. Leave it empty only if the app has api-token off.',
 			},
 			{
 				type: 'dropdown',
@@ -175,6 +176,20 @@ export default class BroadcastBrowserInstance extends InstanceBase {
 			if (e instanceof ApiError && e.status === 400) this.log('warn', `${command}: ${e.message}`)
 			else this.onFailure(e)
 		}
+	}
+
+	/**
+	 * A feed's outputs command (the API's /outputs). The preview's only to an app that has a preview
+	 * feed (status.previewOutput: Broadcast Browser 0.2.0 and later): an older one would take it
+	 * for the program's, and switch an output that's on air.
+	 */
+	async runOutputs(feed, args) {
+		if ((feed ?? 'program') !== 'preview') return this.run('outputs', args)
+		if (!this.status?.previewOutput) {
+			this.log('warn', 'Preview outputs need Broadcast Browser 0.2.0 or later: update the app (nothing was switched)')
+			return
+		}
+		return this.run('outputs', { feed: 'preview', ...args })
 	}
 
 	onStatus(status) {

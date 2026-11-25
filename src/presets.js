@@ -179,35 +179,60 @@ export function updatePresets(self) {
 		),
 	]
 
-	const outputs = [
-		['ndi', 'NDI'],
-		['sdi', 'SDI'],
-		['syphon', 'SYPHON'],
-	].map(([id, label]) =>
-		add(
-			`output_${id}`,
-			button(label, 'output', { output: id, value: 'toggle' }, [
-				{ feedbackId: 'output', options: { output: id, state: 'working' }, style: { bgcolor: GREEN, color: WHITE } },
-				{ feedbackId: 'output', options: { output: id, state: 'failed' }, style: { bgcolor: AMBER, color: BLACK } },
-			]),
-		),
-	)
-	outputs.push(
-		add(
-			'ndi_tally',
-			button(
-				`NDI\\n${v('ndi_receivers')} rx`,
-				'output',
-				{ output: 'ndi', value: 'toggle' },
-				[
-					{ feedbackId: 'ndi_tally', options: { tally: 'preview' }, style: { bgcolor: GREEN, color: WHITE } },
-					{ feedbackId: 'ndi_tally', options: { tally: 'program' }, style: { bgcolor: RED, color: WHITE } },
-				],
-				GREY,
-				'14',
+	// Each feed's outputs: a row for the program (on air) and one for the preview. Green: working;
+	// amber: on, but not working. The NDI tally button: red while a switcher has that source on its
+	// program, green on its preview.
+	const outputs = []
+	for (const [feed, tag, recv] of [
+		['program', 'PGM', 'ndi_receivers'],
+		['preview', 'PVW', 'preview_ndi_receivers'],
+	]) {
+		for (const [id, label] of [
+			['ndi', 'NDI'],
+			['sdi', 'SDI'],
+			['syphon', 'SYPHON'],
+		])
+			outputs.push(
+				add(
+					`output_${feed}_${id}`,
+					button(
+						`${tag}\\n${label}`,
+						'output',
+						{ feed, output: id, value: 'toggle' },
+						[
+							{
+								feedbackId: 'output',
+								options: { feed, output: id, state: 'working' },
+								style: { bgcolor: GREEN, color: WHITE },
+							},
+							{
+								feedbackId: 'output',
+								options: { feed, output: id, state: 'failed' },
+								style: { bgcolor: AMBER, color: BLACK },
+							},
+						],
+						GREY,
+						'14',
+					),
+				),
+			)
+		outputs.push(
+			add(
+				`ndi_tally_${feed}`,
+				button(
+					`${tag} NDI\\n${v(recv)} rx`,
+					'output',
+					{ feed, output: 'ndi', value: 'toggle' },
+					[
+						{ feedbackId: 'ndi_tally', options: { feed, tally: 'preview' }, style: { bgcolor: GREEN, color: WHITE } },
+						{ feedbackId: 'ndi_tally', options: { feed, tally: 'program' }, style: { bgcolor: RED, color: WHITE } },
+					],
+					GREY,
+					'14',
+				),
 			),
-		),
-	)
+		)
+	}
 
 	const settings = [
 		['autoTake', 'AUTO\\nTAKE'],
@@ -250,7 +275,8 @@ export function updatePresets(self) {
 			{
 				id: 'outputs',
 				name: 'Outputs',
-				description: 'Green: working; amber: on, but not working',
+				description:
+					'Each feed’s outputs, PGM (on air) and PVW (the preview): green, working; amber, on but not working',
 				definitions: outputs,
 			},
 			{ id: 'settings', name: 'Settings', description: 'Green: on', definitions: settings },

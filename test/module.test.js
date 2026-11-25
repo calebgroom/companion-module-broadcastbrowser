@@ -117,6 +117,8 @@ test('actions: options that change what is sent', async () => {
 	await a.scroll.callback({ options: { screens: -0.5, target: 'program', smooth: false } })
 	await a.tab_close.callback({ options: { n: 4 } })
 	await a.tab_new.callback({ options: { url: 'x.com', take: true } })
+	await a.signout.callback({ options: { of: 'all' } })
+	await a.signout.callback({ options: { of: 'program' } })
 	await a.command.callback({ options: { command: '/tab-move', args: '?n=3&to=1' } })
 	await a.command.callback({ options: { command: '../../etc', args: '' } })
 	assert.deepEqual(self.sent, [
@@ -130,6 +132,8 @@ test('actions: options that change what is sent', async () => {
 		['scroll', { screens: -0.5, target: 'program', smooth: 'false' }],
 		['tab-close', { n: 4 }],
 		['tab-new', { url: 'x.com', take: 'true' }],
+		['signout', { all: 'true' }],
+		['signout', { target: 'program' }],
 		['tab-move', { n: '3', to: '1' }],
 	])
 	assert.match(self.logs.at(-1)[1], /isn't a command/)
@@ -269,4 +273,95 @@ test('tab pictures: fetched once per new picture, at the button’s size, never 
 	// (A bigger button: its own size.)
 	pic(1, { width: 96, height: 96 })
 	assert.deepEqual(fetched.at(-1)[1], { id: 't3', width: 96, height: 54 })
+})
+
+test('outputs per feed: the preview’s only to an app with a preview feed', async () => {
+	const status = structuredClone(STATUS)
+	status.previewOutput = {
+		outputs: { ndi: true, sdi: false, syphon: false },
+		ndi: true,
+		error: null,
+		name: 'MAC (Broadcast Browser Preview)',
+		connections: 3,
+		tally: { program: false, preview: true },
+		decklink: { on: false, error: 'off' },
+		syphon: { on: false, error: null },
+	}
+	const self = connection(status)
+	await self.actions.output.callback({ options: { feed: 'preview', output: 'sdi', value: 'true' } })
+	await self.actions.output.callback({ options: { feed: 'program', output: 'ndi', value: 'toggle' } })
+	await self.actions.output.callback({ options: { output: 'syphon', value: 'false' } })
+	await self.actions.output_mode.callback({ options: { feed: 'preview', mode: 'off' } })
+	assert.deepEqual(self.sent, [
+		['outputs', { feed: 'preview', sdi: 'true' }],
+		['outputs', { ndi: 'toggle' }],
+		['outputs', { syphon: 'false' }],
+		['outputs', { feed: 'preview', mode: 'off' }],
+	])
+
+	const f = (id, options) => self.feedbacks[id].callback({ options })
+	assert.equal(f('output', { feed: 'preview', output: 'ndi', state: 'working' }), true)
+	assert.equal(f('output', { feed: 'preview', output: 'sdi', state: 'on' }), false)
+	assert.equal(f('output', { feed: 'program', output: 'sdi', state: 'failed' }), true)
+	assert.equal(f('output', { output: 'ndi', state: 'working' }), true, 'no feed: the program, as before')
+	assert.equal(f('ndi_tally', { feed: 'preview', tally: 'preview' }), true)
+	assert.equal(f('ndi_tally', { feed: 'preview', tally: 'program' }), false)
+	assert.equal(f('ndi_tally', { tally: 'program' }), true, 'no feed: the program’s tally')
+
+	const v = variableValues(self)
+	assert.equal(v.preview_outputs, 'NDI')
+	assert.equal(v.preview_ndi_receivers, 3)
+	assert.equal(v.outputs, 'NDI, SDI')
+
+	// An app before 0.2.0: no previewOutput. The preview's command isn't sent (it would switch the program's).
+	const old = connection(STATUS)
+	await old.actions.output.callback({ options: { feed: 'preview', output: 'sdi', value: 'true' } })
+	await old.actions.output_mode.callback({ options: { feed: 'preview', mode: 'both' } })
+	assert.deepEqual(old.sent, [])
+	assert.match(old.logs.at(-1)[1], /need Broadcast Browser 0\.2\.0/)
+	assert.equal(old.feedbacks.output.callback({ options: { feed: 'preview', output: 'ndi', state: 'on' } }), false)
+	assert.equal(variableValues(old).preview_outputs, '')
+})
+
+test('upgrade: buttons from before the feeds keep the program', async () => {
+	const { UpgradeScripts } = await import('../src/upgrades.js')
+	const value = (v) => ({ isExpression: false, value: v })
+	const r = UpgradeScripts[0](
+		{ currentConfig: {} },
+		{
+			config: null,
+			secrets: null,
+			actions: [
+				{ id: 'a1', controlId: 'c', actionId: 'output', options: { output: value('sdi'), value: value('toggle') } },
+				{ id: 'a2', controlId: 'c', actionId: 'output_mode', options: { mode: value('off') } },
+				{
+					id: 'a3',
+					controlId: 'c',
+					actionId: 'output',
+					options: { feed: value('preview'), output: value('ndi'), value: value('true') },
+				},
+				{ id: 'a4', controlId: 'c', actionId: 'take', options: {} },
+			],
+			feedbacks: [
+				{ id: 'f1', controlId: 'c', feedbackId: 'output', options: { output: value('ndi'), state: value('on') } },
+				{ id: 'f2', controlId: 'c', feedbackId: 'ndi_tally', options: { tally: value('program') } },
+				{ id: 'f3', controlId: 'c', feedbackId: 'air', options: { state: value('live') } },
+			],
+		},
+	)
+	assert.deepEqual(
+		r.updatedActions.map((a) => [a.id, a.options.feed]),
+		[
+			['a1', value('program')],
+			['a2', value('program')],
+		],
+	)
+	assert.deepEqual(
+		r.updatedFeedbacks.map((f) => [f.id, f.options.feed]),
+		[
+			['f1', value('program')],
+			['f2', value('program')],
+		],
+	)
+	assert.equal(r.updatedConfig, null)
 })

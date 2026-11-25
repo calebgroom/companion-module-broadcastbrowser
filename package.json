@@ -1,6 +1,6 @@
 {
 	"name": "companion-module-broadcastbrowser",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Bitfocus Companion module for Broadcast Browser",
 	"main": "src/main.js",
 	"type": "module",

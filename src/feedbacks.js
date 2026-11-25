@@ -2,7 +2,7 @@
 // state, the outputs and the settings. All from the app's status (main.js asks for it).
 
 import { combineRgb } from '@companion-module/base'
-import { LOOK_SWITCHES, OUTPUTS } from './actions.js'
+import { FEED, LOOK_SWITCHES, OUTPUTS } from './actions.js'
 
 export const RED = combineRgb(204, 0, 0)
 export const GREEN = combineRgb(0, 153, 51)
@@ -24,6 +24,9 @@ const PICTURE_SHARE = 0.62
 
 export function updateFeedbacks(self) {
 	const s = () => self.status
+	// (A feed's outputs, in the status: the program's (output), or the preview's (previewOutput: none
+	// from an app before 0.2.0, so its feedbacks are off).)
+	const feedOf = (feed) => ((feed ?? 'program') === 'preview' ? s()?.previewOutput : s()?.output)
 	self.setFeedbackDefinitions({
 		air: {
 			type: 'boolean',
@@ -120,9 +123,10 @@ export function updateFeedbacks(self) {
 		output: {
 			type: 'boolean',
 			name: 'Output on',
-			description: 'An output switched on. "Not working": switched on, but it couldn’t start (the app says why)',
+			description: 'A feed’s output switched on. "Not working": switched on, but it couldn’t start (the app says why)',
 			defaultStyle: { bgcolor: GREEN, color: WHITE },
 			options: [
+				FEED,
 				{ type: 'dropdown', id: 'output', label: 'Output', default: 'ndi', choices: OUTPUTS },
 				{
 					type: 'dropdown',
@@ -137,7 +141,7 @@ export function updateFeedbacks(self) {
 				},
 			],
 			callback: ({ options: o }) => {
-				const out = s()?.output
+				const out = feedOf(o.feed)
 				if (!self.connected || !out?.outputs?.[o.output]) return false
 				// (Running, with nothing wrong: SDI's device can stop taking frames while it's on.)
 				const working =
@@ -152,9 +156,10 @@ export function updateFeedbacks(self) {
 		ndi_tally: {
 			type: 'boolean',
 			name: 'NDI tally',
-			description: 'A switcher receiving the NDI source has it on program (or preview)',
+			description: 'A switcher receiving a feed’s NDI source has it on its program (or preview)',
 			defaultStyle: { bgcolor: RED, color: WHITE },
 			options: [
+				FEED,
 				{
 					type: 'dropdown',
 					id: 'tally',
@@ -166,7 +171,7 @@ export function updateFeedbacks(self) {
 					],
 				},
 			],
-			callback: ({ options: o }) => self.connected && !!s()?.output?.tally?.[o.tally],
+			callback: ({ options: o }) => self.connected && !!feedOf(o.feed)?.tally?.[o.tally],
 		},
 		setting: {
 			type: 'boolean',

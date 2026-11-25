@@ -8,7 +8,7 @@ What it does, for Companion's users: [companion/HELP.md](companion/HELP.md), whi
 
 1. `yarn install`, then `yarn package`: it makes `broadcastbrowser-<version>.tgz`. (Or download the `.tgz` from a [release](https://github.com/calebgroom/companion-module-broadcastbrowser/releases).)
 2. In Companion, **Modules → Import module package**, and pick that file.
-3. **Connections → Add connection → Broadcast Browser**: the Mac's address, port `8793`, and the API token (in Broadcast Browser, **File → Copy API Token**).
+3. **Connections → Add connection → Broadcast Browser**: the Mac's address, port `8793`, and the API token (in Broadcast Browser, **File → Control API → Copy API Token**).
 
 ## How it talks to the app
 
@@ -36,7 +36,7 @@ The files:
 - `src/main.js`: the connection (config, polling the app, the status).
 - `src/api.js`: the signed requests.
 - `src/actions.js`, `src/feedbacks.js`, `src/variables.js`, `src/presets.js`: what Companion shows.
-- `src/upgrades.js`: upgrade scripts, for buttons made with an older version (none yet).
+- `src/upgrades.js`: upgrade scripts, for buttons made with an older version (0.2.0: output buttons and feedbacks from before the feeds get the program).
 - `companion/manifest.json`, `companion/HELP.md`: what Companion reads about the module.
 
 ## License

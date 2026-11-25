@@ -88,7 +88,9 @@ export class Api {
 			})
 		} catch (e) {
 			const why = e?.name === 'TimeoutError' ? 'no answer' : (e?.cause?.code ?? e?.message ?? String(e))
-			throw new ApiError(`can't reach Broadcast Browser at ${this.base} (${why})`)
+			throw new ApiError(
+				`can't reach Broadcast Browser at ${this.base} (${why}). Is it running, and listening on this network? (In the app: File → Control API → Listen On; at first it listens on its own Mac only.)`,
+			)
 		}
 		if (wantPng && res.ok && res.headers.get('content-type')?.startsWith('image/png'))
 			return Buffer.from(await res.arrayBuffer()).toString('base64')
@@ -108,8 +110,8 @@ export class Api {
 			}
 			throw new ApiError(
 				this.token
-					? `Broadcast Browser refused the API token (${error || '401'}). Copy it again: in the app, File → Copy API Token`
-					: 'Broadcast Browser needs its API token: in the app, File → Copy API Token, then paste it into this connection',
+					? `Broadcast Browser refused the API token (${error || '401'}). Copy it again: in the app, File → Control API → Copy API Token`
+					: 'Broadcast Browser needs its API token: in the app, File → Control API → Copy API Token, then paste it into this connection',
 				401,
 			)
 		}
