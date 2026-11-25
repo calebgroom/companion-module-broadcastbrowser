@@ -1,0 +1,30 @@
+{
+	"name": "companion-module-broadcastbrowser",
+	"version": "0.1.0",
+	"description": "Bitfocus Companion module for Broadcast Browser",
+	"main": "src/main.js",
+	"type": "module",
+	"author": "Caleb Groom",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/calebgroom/companion-module-broadcastbrowser.git"
+	},
+	"scripts": {
+		"format": "prettier -w .",
+		"check": "node --check src/main.js && prettier --check .",
+		"test": "node --test test/*.test.js",
+		"package": "companion-module-build"
+	},
+	"engines": {
+		"node": "^22.22"
+	},
+	"dependencies": {
+		"@companion-module/base": "~2.0.4"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^3.2.1",
+		"prettier": "^3.8.1"
+	},
+	"prettier": "@companion-module/tools/.prettierrc.json"
+}

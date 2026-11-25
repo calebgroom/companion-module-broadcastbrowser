@@ -1,0 +1,27 @@
+{
+	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+	"type": "connection",
+	"id": "broadcastbrowser",
+	"name": "Broadcast Browser",
+	"shortname": "bbrowser",
+	"description": "Control Broadcast Browser: web pages as an NDI, SDI and Syphon source, with preview, program and take",
+	"version": "0.0.0",
+	"license": "MIT",
+	"repository": "git+https://github.com/calebgroom/companion-module-broadcastbrowser.git",
+	"bugs": "https://github.com/calebgroom/companion-module-broadcastbrowser/issues",
+	"maintainers": [
+		{
+			"name": "Caleb Groom"
+		}
+	],
+	"runtime": {
+		"type": "node22",
+		"api": "nodejs-ipc",
+		"apiVersion": "0.0.0",
+		"entrypoint": "../src/main.js"
+	},
+	"legacyIds": [],
+	"manufacturer": "Caleb Groom",
+	"products": ["Broadcast Browser"],
+	"keywords": ["browser", "web", "ndi", "sdi", "syphon", "graphics", "html"]
+}
