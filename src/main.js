@@ -28,6 +28,13 @@ export default class BroadcastBrowserInstance extends InstanceBase {
 	listsKey = ''
 	/** The connection's status as last told to Companion (told again only when it changes). */
 	shownStatus = ''
+	/**
+	 * The tabs' pictures, for their buttons: by place and size ("3:72x40"), { key, tabId, png64 }.
+	 * The key holds the tab's picture version (its status's picture): a new one is fetched when it changes.
+	 */
+	pictures = new Map()
+	/** The pictures being fetched (their keys). */
+	fetching = new Set()
 
 	/** The connection's status in Companion, if it has changed. */
 	setStatus(status, message = null) {
@@ -56,6 +63,7 @@ export default class BroadcastBrowserInstance extends InstanceBase {
 		this.status = null
 		this.connected = false
 		this.listsKey = ''
+		this.pictures.clear()
 		this.updateDefinitions()
 		// (Nothing known about the app now: the buttons and variables say so until it answers.)
 		this.setVariableValues(variableValues(this))
@@ -242,6 +250,36 @@ export default class BroadcastBrowserInstance extends InstanceBase {
 		if (a.n) return favs.find((f) => f.n === Number(a.n))
 		const name = a.name.toLowerCase()
 		return favs.find((f) => f.name.toLowerCase() === name) ?? favs.find((f) => f.name.toLowerCase().includes(name))
+	}
+
+	/**
+	 * The picture of the tab at place n, as a base64 PNG fitting width × height, for its button: the
+	 * one we have, if it's of the tab there now (or undefined). A new one is fetched, in the
+	 * background, when the app has one newer than ours; its feedback is checked again once it's here.
+	 */
+	tabPicture(n, width, height) {
+		const tab = this.connected ? this.status?.tabs?.[n - 1] : undefined
+		if (!tab?.picture) return undefined
+		const slot = `${n}:${width}x${height}`
+		const key = `${tab.id}:${tab.picture}:${width}x${height}`
+		const have = this.pictures.get(slot)
+		if (have?.key !== key && !this.fetching.has(key) && this.api) {
+			this.fetching.add(key)
+			const api = this.api
+			api
+				.png('tab-picture', { id: tab.id, width, height })
+				.then((png64) => {
+					// (Not from a connection since replaced: configUpdated.)
+					if (api !== this.api) return
+					if (png64) this.pictures.set(slot, { key, tabId: tab.id, png64 })
+					else this.pictures.delete(slot)
+					this.checkFeedbacks('tab_picture')
+				})
+				.catch((e) => this.log('debug', `tab ${n}'s picture: ${e.message}`))
+				.finally(() => this.fetching.delete(key))
+		}
+		// (Not a picture of the tab that was here before: the tabs have moved.)
+		return have?.tabId === tab.id ? have.png64 : undefined
 	}
 
 	/** The tab a favorite is open in (as the app finds it: the same address, give or take a last /), or undefined. */

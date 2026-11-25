@@ -48,6 +48,8 @@ function connection(status = STATUS) {
 	Object.assign(self, {
 		status,
 		connected: true,
+		pictures: new Map(),
+		fetching: new Set(),
 		sent: [],
 		logs: [],
 		run: async (command, args = {}) =>
@@ -207,7 +209,7 @@ test('presets: every action, feedback and option they use exists', () => {
 			for (const k of Object.keys(fb.options)) assert.ok(known.has(k), `${id}: ${fb.feedbackId} has no option ${k}`)
 		}
 	}
-	assert.equal(self.presets.tab_2.style.text, '2\\n$(bb:tab_2_title)')
+	assert.equal(self.presets.tab_2.style.text, '2 $(bb:tab_2_title)')
 })
 
 test('before the app is reached: definitions still made', () => {
@@ -215,4 +217,56 @@ test('before the app is reached: definitions still made', () => {
 	assert.equal(self.actions.favorite.options[0].choices.length, 1)
 	assert.deepEqual(self.structure.find((s) => s.id === 'favorites').definitions, [])
 	assert.equal(variableValues(self).tab_count, 0)
+})
+
+test('tab feedback: "none" for a place with no tab, or when not connected', () => {
+	const self = connection()
+	const f = (options) => self.feedbacks.tab.callback({ options })
+	assert.equal(f({ n: 3, state: 'empty' }), false)
+	assert.equal(f({ n: 4, state: 'empty' }), true)
+	self.connected = false
+	assert.equal(f({ n: 1, state: 'empty' }), true)
+	assert.equal(f({ n: 1, state: 'program' }), false)
+})
+
+test('tab pictures: fetched once per new picture, at the button’s size, never shown for another tab', async () => {
+	const status = structuredClone(STATUS)
+	status.tabs[0].picture = 4
+	status.tabs[1].picture = 0
+	const self = connection(status)
+	const fetched = []
+	const checked = []
+	self.api = {
+		png: async (command, args) => (fetched.push([command, args]), `PNG-${args.id}-${status.tabs[0].picture}`),
+	}
+	self.checkFeedbacks = (...ids) => checked.push(...ids)
+	const pic = (n, image = { width: 72, height: 72 }) => self.feedbacks.tab_picture.callback({ options: { n }, image })
+	const settle = () => new Promise((r) => setImmediate(r))
+
+	assert.deepEqual(pic(1), {}, 'nothing until it has come')
+	assert.deepEqual(fetched, [['tab-picture', { id: 't1', width: 72, height: 41 }]])
+	pic(1)
+	assert.equal(fetched.length, 1, 'not fetched twice while on its way')
+	await settle()
+	assert.deepEqual(checked, ['tab_picture'])
+	assert.deepEqual(pic(1), { png64: 'PNG-t1-4', pngalignment: 'center:top' })
+	assert.equal(fetched.length, 1, 'the same picture: not fetched again')
+
+	assert.deepEqual(pic(2), {}, 'no picture yet (picture: 0): nothing fetched')
+	assert.equal(fetched.length, 1)
+
+	status.tabs[0].picture = 5
+	assert.deepEqual(pic(1), { png64: 'PNG-t1-4', pngalignment: 'center:top' }, 'the old one until the new one comes')
+	await settle()
+	assert.deepEqual(pic(1), { png64: 'PNG-t1-5', pngalignment: 'center:top' })
+
+	// (The tabs move: tab 1 is another tab now. Its picture isn't shown on button 1.)
+	status.tabs[0] = { ...status.tabs[2], n: 1, picture: 7 }
+	assert.deepEqual(pic(1), {})
+	await settle()
+	assert.equal(pic(1).png64, 'PNG-t3-7')
+
+	// (A bigger button: its own size.)
+	pic(1, { width: 96, height: 96 })
+	assert.deepEqual(fetched.at(-1)[1], { id: 't3', width: 96, height: 54 })
 })

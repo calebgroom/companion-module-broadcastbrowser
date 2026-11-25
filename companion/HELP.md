@@ -20,14 +20,18 @@ Every request is signed with the token, so the token itself never crosses the ne
 
 ### Feedbacks
 
-What's on air (live, loading, frozen, black); a favorite or a tab on air, in the preview, or open; a page loading; an output on, working, or on but not working; NDI tally; a setting on; and _Not connected_.
+What's on air (live, loading, frozen, black); a favorite or a tab on air, in the preview, or open (and a tab place with no tab); a tab's picture (its page, as on its card in the app); a page loading; an output on, working, or on but not working; NDI tally; a setting on; and _Not connected_.
 
 ### Variables
 
 `air_state`, `program_title`, `program_url`, `preview_title`, `preview_url`, their `_loading` and `_zoom`; `tab_1_title` to `tab_9_title` and `tab_1_state` to `tab_9_state`; `favorite_1_name` to `favorite_20_name`; `tab_count`, `favorite_count`, `outputs`, `ndi_name`, `ndi_receivers`, `last_message`, `connected`.
 
+### Tab buttons
+
+Drag the **Tabs** presets into a row: button 1 is always the first tab in the app, button 2 the second, and so on, as the app's Cmd+1–9. Each shows its tab's page and title, red when it's on air and green when it's in the preview, and follows the app as tabs open, close and move. With fewer tabs open than buttons, the rest show their number, dimmed. The pictures are as new as the app's cards (every 5 seconds, unless the app's **thumbs** setting says otherwise).
+
 ### Presets
 
-On air (Take, Black, Freeze, Live, Home), one button per favorite, tabs 1–9 (showing each tab's title), page controls, outputs and settings. Red: on air; green: in the preview, or on; amber: loading, or something wrong.
+On air (Take, Black, Freeze, Live, Home), one button per favorite, tabs 1–9 (each tab's picture and title; a place with no tab shows its number, dimmed), page controls, outputs and settings. Red: on air; green: in the preview, or on; amber: loading, or something wrong.
 
 NDI® is a registered trademark of Vizrt NDI AB.

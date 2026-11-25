@@ -52,7 +52,20 @@ export class Api {
 		return this.request('GET', `/${command}${Api.query(args)}`)
 	}
 
-	async request(method, path, body, retried = false) {
+	/**
+	 * GET /<command>?<args> for a PNG (the app's /tab-picture): the picture, base64, or null if the
+	 * app has none (404). Throws an ApiError otherwise.
+	 */
+	async png(command, args) {
+		try {
+			return await this.request('GET', `/${command}${Api.query(args)}`, undefined, false, true)
+		} catch (e) {
+			if (e instanceof ApiError && e.status === 404) return null
+			throw e
+		}
+	}
+
+	async request(method, path, body, retried = false, wantPng = false) {
 		const headers = {}
 		const data = body === undefined ? '' : JSON.stringify(body)
 		if (body !== undefined) headers['content-type'] = 'application/json'
@@ -77,6 +90,8 @@ export class Api {
 			const why = e?.name === 'TimeoutError' ? 'no answer' : (e?.cause?.code ?? e?.message ?? String(e))
 			throw new ApiError(`can't reach Broadcast Browser at ${this.base} (${why})`)
 		}
+		if (wantPng && res.ok && res.headers.get('content-type')?.startsWith('image/png'))
+			return Buffer.from(await res.arrayBuffer()).toString('base64')
 		let answer = null
 		try {
 			answer = await res.json()
@@ -89,7 +104,7 @@ export class Api {
 			const error = answer?.error ?? ''
 			if (this.token && !retried && Number.isFinite(theirs) && /time/i.test(error)) {
 				this.clockOffset = theirs - Date.now()
-				return this.request(method, path, body, true)
+				return this.request(method, path, body, true, wantPng)
 			}
 			throw new ApiError(
 				this.token

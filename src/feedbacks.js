@@ -19,6 +19,9 @@ const STATE_CHOICES = [
 /** A tab's state against the option: program, preview, or open (any). */
 const tabIs = (tab, want) => !!tab && (want === 'open' || tab.state === want)
 
+/** The share of a button's height a tab's picture may take (the rest: its title). */
+const PICTURE_SHARE = 0.62
+
 export function updateFeedbacks(self) {
 	const s = () => self.status
 	self.setFeedbackDefinitions({
@@ -64,18 +67,37 @@ export function updateFeedbacks(self) {
 		},
 		tab: {
 			type: 'boolean',
-			name: 'Tab: on air, in the preview, or open',
+			name: 'Tab: on air, in the preview, open, or none',
+			description: 'Tabs by their place, from 1. "None": no tab there (fewer tabs open), or the app not reached',
 			defaultStyle: { bgcolor: RED, color: WHITE },
 			options: [
 				{ type: 'number', id: 'n', label: 'Tab', default: 1, min: 1, max: 99, asInteger: true },
-				{ type: 'dropdown', id: 'state', label: 'Is', default: 'program', choices: STATE_CHOICES },
+				{
+					type: 'dropdown',
+					id: 'state',
+					label: 'Is',
+					default: 'program',
+					choices: [...STATE_CHOICES, { id: 'empty', label: 'None (no tab there)' }],
+				},
 			],
-			callback: ({ options: o }) =>
-				self.connected &&
-				tabIs(
-					(s()?.tabs ?? []).find((t) => t.n === Number(o.n)),
-					o.state,
-				),
+			callback: ({ options: o }) => {
+				const tab = self.connected ? (s()?.tabs ?? []).find((t) => t.n === Number(o.n)) : undefined
+				return o.state === 'empty' ? !tab : tabIs(tab, o.state)
+			},
+		},
+		tab_picture: {
+			type: 'advanced',
+			name: 'Tab: its picture',
+			description:
+				'The tab’s page, as on its card in the app, across the top of the button (new every few seconds, as the app’s cards)',
+			options: [{ type: 'number', id: 'n', label: 'Tab', default: 1, min: 1, max: 99, asInteger: true }],
+			callback: ({ options: o, image }) => {
+				// (16:9, as wide as the button, in its top part: the title below.)
+				const width = image?.width ?? 72
+				const height = Math.min(Math.round((width * 9) / 16), Math.round((image?.height ?? 72) * PICTURE_SHARE))
+				const png64 = self.tabPicture(Number(o.n), width, height)
+				return png64 ? { png64, pngalignment: 'center:top' } : {}
+			},
 		},
 		loading: {
 			type: 'boolean',

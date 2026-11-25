@@ -7,6 +7,7 @@ import { TAB_VARIABLES } from './variables.js'
 
 const GREY = combineRgb(40, 40, 40)
 const BLUE = combineRgb(0, 80, 200)
+const DIM = combineRgb(90, 90, 90)
 
 const button = (text, actionId, options = {}, feedbacks = [], bgcolor = GREY, size = '18') => ({
 	type: 'simple',
@@ -114,20 +115,33 @@ export function updatePresets(self) {
 		),
 	)
 
+	// Tabs 1–9, by their place: each one's picture across the top and its title below; red on air,
+	// green in the preview; a place with no tab (fewer open): its number, dim, on black.
 	const tabs = []
 	for (let n = 1; n <= TAB_VARIABLES; n++)
 		tabs.push(
-			add(
-				`tab_${n}`,
-				button(
-					`${n}\\n${v(`tab_${n}_title`)}`,
-					'tab',
-					{ n, take: false },
-					[PROGRAM_RED('tab', { n }), PREVIEW_GREEN('tab', { n })],
-					GREY,
-					'7',
-				),
-			),
+			add(`tab_${n}`, {
+				type: 'simple',
+				name: `Tab ${n}`,
+				style: {
+					text: `${n} ${v(`tab_${n}_title`)}`,
+					size: '7',
+					color: WHITE,
+					bgcolor: GREY,
+					alignment: 'center:bottom',
+				},
+				steps: [{ down: [{ actionId: 'tab', options: { n, take: false } }], up: [] }],
+				feedbacks: [
+					{ feedbackId: 'tab_picture', options: { n } },
+					PROGRAM_RED('tab', { n }),
+					PREVIEW_GREEN('tab', { n }),
+					{
+						feedbackId: 'tab',
+						options: { n, state: 'empty' },
+						style: { bgcolor: BLACK, color: DIM, text: `${n}`, alignment: 'center:center', size: '18' },
+					},
+				],
+			}),
 		)
 	tabs.push(
 		add('tab_prev', button('◀ TAB', 'tab_step', { by: '-1' })),
