@@ -12,6 +12,7 @@ Every request is signed with the token, so the token itself never crosses the ne
 ### Actions
 
 - **Go to an address**, **Favorite**, **Home**: a page into the preview (tick _Put it on air once it has loaded_ to go straight to air). Words instead of an address are a Google search. A favorite is picked by name; you can also type its number or part of its name.
+- **Go to an address** can also load into a particular tab (**In tab**: its number, or text in its address or title, such as `cca.umptrax.com`), wherever that tab is: one in the background stays there, and **the tab on air changes on air**, held on the picture before while the page loads if Hold While Loading is on. One button per page, all pointed at the same tab, switches what that tab shows. Needs Broadcast Browser 0.3.0 or later.
 - **Take** (the preview on air, the page on air into the preview), **Live**, **Freeze**, **Black**.
 - **Tab** (by its place, from 1), **Next or previous tab**, **New tab**, **Close a tab**, **Reopen the closed tab**.
 - **Back, forward, reload, stop**, **Scroll**, **Scroll to the top**, **Zoom**: on the preview, or on the page on air.

@@ -67,7 +67,8 @@ export function updateActions(self) {
 		// ---- Pages
 		go: {
 			name: 'Go to an address',
-			description: 'Load an address into the preview (as the address bar: words are a Google search)',
+			description:
+				'Load an address into the preview, or into a particular tab (as the address bar: words are a Google search)',
 			options: [
 				{
 					type: 'textinput',
@@ -77,11 +78,20 @@ export function updateActions(self) {
 					minLength: 1,
 					useVariables: true,
 				},
+				{
+					type: 'textinput',
+					id: 'tab',
+					label: 'In tab (empty: the preview’s)',
+					tooltip:
+						'A tab’s number, or text in its address or title (the first tab that has it). That tab loads the address wherever it is: in the background it stays there, and the tab on air changes on air (held on the picture before while it loads, with Hold While Loading on). Needs Broadcast Browser 0.3.0 or later.',
+					default: '',
+					useVariables: true,
+				},
 				TAKE,
 				{ type: 'checkbox', id: 'newTab', label: 'In a new tab', default: false },
 			],
 			callback: ({ options: o }) =>
-				run('go', { url: String(o.url ?? '').trim(), take: flag(o.take), newTab: flag(o.newTab) }),
+				self.runGo({ url: String(o.url ?? '').trim(), take: flag(o.take), newTab: flag(o.newTab) }, o.tab),
 		},
 		favorite: {
 			name: 'Favorite',

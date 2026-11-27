@@ -365,3 +365,26 @@ test('upgrade: buttons from before the feeds keep the program', async () => {
 	)
 	assert.equal(r.updatedConfig, null)
 })
+
+test('go into a tab: by number or text, only to an app that reports its version', async () => {
+	const status = structuredClone(STATUS)
+	status.version = '0.3.0'
+	const self = connection(status)
+	const go = (o) =>
+		self.actions.go.callback({ options: { url: 'https://cca.example/play/1', take: false, newTab: false, ...o } })
+	await go({ tab: '' })
+	await go({ tab: ' 3 ' })
+	await go({ tab: 'cca.example' })
+	assert.deepEqual(self.sent, [
+		['go', { url: 'https://cca.example/play/1' }],
+		['go', { url: 'https://cca.example/play/1', n: '3' }],
+		['go', { url: 'https://cca.example/play/1', match: 'cca.example' }],
+	])
+
+	// Broadcast Browser before 0.3.0 (no version in its status) would load it into the preview instead.
+	const old = connection(STATUS)
+	await old.actions.go.callback({ options: { url: 'https://cca.example/play/1', tab: 'cca.example' } })
+	await old.actions.go.callback({ options: { url: 'https://cca.example/play/2', tab: '' } })
+	assert.deepEqual(old.sent, [['go', { url: 'https://cca.example/play/2' }]])
+	assert.match(old.logs.at(-1)[1], /0\.3\.0 or later/)
+})

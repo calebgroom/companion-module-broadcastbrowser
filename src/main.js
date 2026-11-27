@@ -192,6 +192,24 @@ export default class BroadcastBrowserInstance extends InstanceBase {
 		return this.run('outputs', { feed: 'preview', ...args })
 	}
 
+	/**
+	 * The API's /go, into a particular tab if one's given (its number, or text in its address or
+	 * title). Only to an app that knows tabs for /go (it reports its version: Broadcast Browser 0.3.0
+	 * and later): an older one would ignore the tab and load the address into the preview.
+	 */
+	async runGo(args, tab) {
+		tab = String(tab ?? '').trim()
+		if (!tab) return this.run('go', args)
+		if (!this.status?.version) {
+			this.log(
+				'warn',
+				'Going to an address in a particular tab needs Broadcast Browser 0.3.0 or later: update the app (nothing was loaded)',
+			)
+			return
+		}
+		return this.run('go', { ...args, ...(/^\d+$/.test(tab) ? { n: tab } : { match: tab }) })
+	}
+
 	onStatus(status) {
 		if (!status) return
 		this.status = status
